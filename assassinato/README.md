@@ -10,7 +10,8 @@ Para sair pressione ```CTRL+C``` ou ```COMMAND+C```
 
 ### Com debug
 
-```./mvnw spring-boot:run -Drun.arguments=-d```
+```./mvnw clean package
+java -jar target/assassinato-0.0.1-SNAPSHOT.jar -d```
 
 Para sair pressione ```CTRL+C``` ou ```COMMAND+C```
 
