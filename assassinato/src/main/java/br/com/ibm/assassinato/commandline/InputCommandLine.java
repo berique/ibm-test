@@ -13,73 +13,98 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.Scanner;
-
 @Service
 @Order(2)
 public class InputCommandLine implements CommandLineRunner {
     private final static Logger LOGGER = LoggerFactory.getLogger(InputCommandLine.class);
 
-    private Witness witness;
+    private final GetInput getInput;
 
-    private WitnessValidation witnessValidation;
+    private final Witness witness;
+
+    private final WitnessValidation witnessValidation;
 
     @Autowired
-    public InputCommandLine(Witness witness, WitnessValidation witnessValidation) {
+    public InputCommandLine(Witness witness, GetInput getInput, WitnessValidation witnessValidation) {
         this.witness = witness;
         this.witnessValidation = witnessValidation;
+        this.getInput = getInput;
     }
 
     @Override
     public void run(String... args) throws Exception {
         while (true) {
+            LOGGER.info("Digite o id do suspeito, id da arma e id do local");
+            LOGGER.info("EX: 1, 1, 1");
+            String str = getInput.read();
+            LOGGER.info("Entrada: {}", str);
+            String[] ars = parseInput(str);
+            if (ars.length < 3) {
+                LOGGER.info("Numero de parametro insuficientes");
+                continue;
+            }
+            int suspect, gun, location;
             try {
-                LOGGER.info("Digite o id do suspeito, id da arma e id do local");
-                LOGGER.info("EX: 1, 1, 1");
-                Scanner s = new Scanner(System.in);
-                String str = s.nextLine();
-                str = str.replaceAll("\\s+", "");
-                String ars[] = str.split("\\,");
-                int suspect = Integer.parseInt(ars[0]);
-                int gun = Integer.parseInt(ars[1]);
-                int location = Integer.parseInt(ars[2]);
-                if (validateInput(suspect, HypothesisUtils.SUSPECTS.length) == false) {
-                    LOGGER.info("{} é id de suspeito é inválido.", suspect);
-                    continue;
-                }
-                if (validateInput(gun, HypothesisUtils.GUNS.length) == false) {
-                    LOGGER.info("{} é id de arma é inválido.", gun);
-                    continue;
-                }
+                suspect = Integer.parseInt(ars[0]);
+            } catch (NumberFormatException e) {
+                LOGGER.info("{} é id de suspeito é inválido.", ars[0]);
+                continue;
+            }
+            try {
+                gun = Integer.parseInt(ars[1]);
+            } catch (NumberFormatException e) {
+                LOGGER.info("{} é id de arma é inválido.", ars[1]);
+                continue;
+            }
+            try {
+                location = Integer.parseInt(ars[2]);
+            } catch (NumberFormatException e) {
+                LOGGER.info("{} é id de local é inválido.", ars[2]);
+                continue;
+            }
+            if (validateInput(suspect, HypothesisUtils.SUSPECTS.length) == false) {
+                LOGGER.info("{} é id de suspeito é inválido.", suspect);
+                continue;
+            }
+            if (validateInput(gun, HypothesisUtils.GUNS.length) == false) {
+                LOGGER.info("{} é id de arma é inválido.", gun);
+                continue;
+            }
 
-                if (validateInput(location, HypothesisUtils.LOCATIONS.length) == false) {
-                    LOGGER.info("{} é id de local é inválido.", location);
-                    continue;
+            if (validateInput(location, HypothesisUtils.LOCATIONS.length) == false) {
+                LOGGER.info("{} é id de local é inválido.", location);
+                continue;
+            }
+            for (String arg : args) {
+                if (arg.equals("-d")) {
+                    LOGGER.info("{}", witness);
                 }
-                LOGGER.info("{}", witness);
-                IncorrectType[] result = witnessValidation.validate(Guess.DetectiveGuessBuilder.aDetectiveGuess()
-                        .withGun(HypothesisUtils.GUNS[gun])
-                        .withLocation(HypothesisUtils.LOCATIONS[location])
-                        .withSuspect(HypothesisUtils.SUSPECTS[suspect])
-                        .build(), witness);
-                if ( result.length == 0 ) {
-                    LOGGER.info("0");
-                    break;
-                } else {
-                    LOGGER.info("Resultado:");
-                    String tmp = "";
-                    for ( IncorrectType type: result ) {
-                        if (!StringUtils.isEmpty(tmp)) {
-                            tmp += ", ";
-                        }
-                        tmp += type.getType();
+            }
+            IncorrectType[] result = witnessValidation.validate(Guess.DetectiveGuessBuilder.aDetectiveGuess()
+                    .withGun(HypothesisUtils.GUNS[gun])
+                    .withLocation(HypothesisUtils.LOCATIONS[location])
+                    .withSuspect(HypothesisUtils.SUSPECTS[suspect])
+                    .build(), witness);
+            if (result.length == 0) {
+                LOGGER.info("0");
+                break;
+            } else {
+                LOGGER.info("Resultado:");
+                String tmp = "";
+                for (IncorrectType type : result) {
+                    if (!StringUtils.isEmpty(tmp)) {
+                        tmp += ", ";
                     }
-                    LOGGER.info(tmp);
+                    tmp += type.getType();
                 }
-            } catch (Exception e) {
-                LOGGER.info(e.getMessage(), e);
+                LOGGER.info(tmp);
             }
         }
+    }
+
+    private String[] parseInput(String str) {
+        str = str.replaceAll("\\s+", "");
+        return str.split("\\,");
     }
 
     private boolean validateInput(int suspect, int length) {
