@@ -34,7 +34,7 @@ public class InputCommandLine implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         while (true) {
-            LOGGER.info("Digite o id do suspeito, id da arma e id do local");
+            LOGGER.info("Digite: [id do suspeito], [id da arma], [id do local]");
             LOGGER.info("EX: 1, 1, 1");
             String str = getInput.read();
             LOGGER.info("Entrada: {}", str);
